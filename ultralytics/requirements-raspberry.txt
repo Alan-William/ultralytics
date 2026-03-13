@@ -1,0 +1,21 @@
+# Ultralytics YOLOv8 树莓派部署依赖
+
+# 核心依赖
+ultralytics>=8.0.0
+opencv-python-headless>=4.5.0
+numpy>=1.20.0
+
+# GUI 支持（树莓派需要）
+PyQt5>=5.15.0
+
+# 图像处理
+Pillow>=9.0.0
+
+# 性能优化（可选）
+# onnxruntime>=1.14.0  # ONNX 推理加速
+# tflite-runtime>=2.12.0  # TFLite 支持（树莓派需手动安装）
+
+# 工具
+tqdm>=4.65.0
+pyyaml>=6.0
+requests>=2.28.0
