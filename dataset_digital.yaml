@@ -1,0 +1,31 @@
+# Train/val/test sets as 1) dir: path/to/imgs, 2) file: path/to/imgs.txt, or 3) list: [path/to/imgs1, path/to/imgs2, ..]
+path: C:/Users/xxa/Desktop/ultralytics/datasets/mydata_digital  # dataset root dir
+train: images/train  # train images (relative to 'path') 128 images
+val: images/val  # val images (relative to 'path') 128 images
+test:  # test images (optional)
+
+# Classes
+names:
+  0: 0
+  1: 1
+  2: 2
+  3: 3
+  4: 4
+  5: 5
+  6: 6
+  7: 7
+  8: 8
+  9: 9
+  10: .
+  11: m
+  12: k
+  13: A
+  14: V
+  15: Ω
+  16: M
+  17: W
+  18: h
+
+
+
+
