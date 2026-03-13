@@ -1,0 +1,39 @@
+# 个人配置文件
+AGENTS.md
+HEARTBEAT.md
+IDENTITY.md
+MEMORY.md
+SOUL.md
+USER.md
+TOOLS.md
+BOOTSTRAP.md
+todo.md
+curriculum.json
+*.tar.gz
+*.log
+
+# 个人目录
+.clawhub/
+.openclaw/
+memory/
+learning/
+research/
+scripts/test_*.py
+.skills/
+
+# 教程文件
+k230-picoclaw-tutorial.md
+moonshot-api-config-notes.md
+kimi-code-api-notes.md
+kimi-code-openclaw-test.md
+github-upload-guide.md
+
+# 其他
+*问题排查报告.md
+*诊断报告.md
+heartbeat-check-logic.md
+memory-optimization-recommendations.md
+TOKEN_OPTIMIZATION_GUIDE.md
+user-permissions.json
+.vscode/
+.idea/workspace.xml
