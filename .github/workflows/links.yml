@@ -9,10 +9,12 @@
 
 name: Check Broken links
 
+# ⚠️ DISABLED by 小爪 on 2026-03-15 - too many false positives
+# Uncomment to re-enable:
 on:
-  workflow_dispatch:
-  schedule:
-    - cron: "0 0 * * *" # runs at 00:00 UTC every day
+  # workflow_dispatch:
+  # schedule:
+  #   - cron: "0 0 * * *" # runs at 00:00 UTC every day
 
 jobs:
   Links:
