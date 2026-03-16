@@ -20,9 +20,9 @@ class KalmanFilterXYAH:
         ndim, dt = 4, 1.0
 
         # Create Kalman filter model matrices
+        # Optimize: use numpy broadcasting instead of loop for initialization
         self._motion_mat = np.eye(2 * ndim, 2 * ndim)
-        for i in range(ndim):
-            self._motion_mat[i, ndim + i] = dt
+        self._motion_mat[np.arange(ndim), np.arange(ndim, 2 * ndim)] = dt
         self._update_mat = np.eye(ndim, 2 * ndim)
 
         # Motion and observation uncertainty are chosen relative to the current state estimate. These weights control
