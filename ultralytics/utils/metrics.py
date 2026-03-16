@@ -362,17 +362,25 @@ class ConfusionMatrix:
 
         n = matches.shape[0] > 0
         m0, m1, _ = matches.transpose().astype(int)
-        for i, gc in enumerate(gt_classes):
+
+        # Vectorize confusion matrix updates
+        gt_classes_np = gt_classes.cpu().numpy()
+        detection_classes_np = detection_classes.cpu().numpy()
+
+        # Process ground truth classes
+        for i, gc in enumerate(gt_classes_np):
             j = m0 == i
             if n and sum(j) == 1:
-                self.matrix[detection_classes[m1[j]], gc] += 1  # correct
+                self.matrix[detection_classes_np[m1[j][0]], gc] += 1  # correct
             else:
                 self.matrix[self.nc, gc] += 1  # true background
 
+        # Vectorize false positive detection
         if n:
-            for i, dc in enumerate(detection_classes):
-                if not any(m1 == i):
-                    self.matrix[dc, self.nc] += 1  # predicted background
+            matched_detections = np.isin(np.arange(len(detection_classes_np)), m1)
+            unmatched_dcs = detection_classes_np[~matched_detections]
+            for dc in unmatched_dcs:
+                self.matrix[dc, self.nc] += 1  # predicted background
 
     def matrix(self):
         """Returns the confusion matrix."""
