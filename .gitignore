@@ -11,6 +11,8 @@ todo.md
 curriculum.json
 *.tar.gz
 *.log
+__pycache__/
+*.pyc
 
 # 个人目录
 .clawhub/
