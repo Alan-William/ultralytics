@@ -216,10 +216,10 @@ class YOLODataset(BaseDataset):
             if k in ["masks", "keypoints", "bboxes", "cls", "segments", "obb"]:
                 value = torch.cat(value, 0)
             new_batch[k] = value
-        new_batch["batch_idx"] = list(new_batch["batch_idx"])
-        for i in range(len(new_batch["batch_idx"])):
-            new_batch["batch_idx"][i] += i  # add target image index for build_targets()
-        new_batch["batch_idx"] = torch.cat(new_batch["batch_idx"], 0)
+        # Vectorize batch_idx manipulation instead of list conversion
+        batch_idx_list = new_batch["batch_idx"]
+        offsets = torch.arange(len(batch_idx_list), device=batch_idx_list[0].device if len(batch_idx_list) > 0 else 'cpu')
+        new_batch["batch_idx"] = torch.cat([batch_idx + offset for batch_idx, offset in zip(batch_idx_list, offsets)], 0)
         return new_batch
 
 

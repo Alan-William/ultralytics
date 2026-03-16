@@ -81,7 +81,8 @@ class BboxLoss(nn.Module):
             loss_dfl = self._df_loss(pred_dist[fg_mask].view(-1, self.reg_max + 1), target_ltrb[fg_mask]) * weight
             loss_dfl = loss_dfl.sum() / target_scores_sum
         else:
-            loss_dfl = torch.tensor(0.0).to(pred_dist.device)
+            # Optimize: use zeros_like to avoid device placement overhead
+            loss_dfl = torch.zeros_like(target_scores_sum)
 
         return loss_iou, loss_dfl
 
@@ -122,7 +123,8 @@ class RotatedBboxLoss(BboxLoss):
             loss_dfl = self._df_loss(pred_dist[fg_mask].view(-1, self.reg_max + 1), target_ltrb[fg_mask]) * weight
             loss_dfl = loss_dfl.sum() / target_scores_sum
         else:
-            loss_dfl = torch.tensor(0.0).to(pred_dist.device)
+            # Optimize: use zeros_like to avoid device placement overhead
+            loss_dfl = torch.zeros_like(target_scores_sum)
 
         return loss_iou, loss_dfl
 
@@ -197,15 +199,21 @@ class v8DetectionLoss:
         """Calculate the sum of the loss for box, cls and dfl multiplied by batch size."""
         loss = torch.zeros(3, device=self.device)  # box, cls, dfl
         feats = preds[1] if isinstance(preds, tuple) else preds
-        pred_distri, pred_scores = torch.cat([xi.view(feats[0].shape[0], self.no, -1) for xi in feats], 2).split(
-            (self.reg_max * 4, self.nc), 1
-        )
+        # Optimize: build separate lists for pred_distri and pred_scores to avoid concat+split
+        batch_size = feats[0].shape[0]
+        pred_distri_list = []
+        pred_scores_list = []
+        for xi in feats:
+            xi_view = xi.view(batch_size, self.no, -1)
+            pred_distri_list.append(xi_view[:, : self.reg_max * 4, :])
+            pred_scores_list.append(xi_view[:, self.reg_max * 4 :, :])
+        pred_distri = torch.cat(pred_distri_list, 2)
+        pred_scores = torch.cat(pred_scores_list, 2)
 
         pred_scores = pred_scores.permute(0, 2, 1).contiguous()
         pred_distri = pred_distri.permute(0, 2, 1).contiguous()
 
         dtype = pred_scores.dtype
-        batch_size = pred_scores.shape[0]
         imgsz = torch.tensor(feats[0].shape[2:], device=self.device, dtype=dtype) * self.stride[0]  # image size (h,w)
         anchor_points, stride_tensor = make_anchors(feats, self.stride, 0.5)
 
@@ -553,19 +561,22 @@ class v8PoseLoss(v8DetectionLoss):
             (batch_size, max_kpts, keypoints.shape[1], keypoints.shape[2]), device=keypoints.device
         )
 
-        # TODO: any idea how to vectorize this?
-        # Fill batched_keypoints with keypoints based on batch_idx
-        for i in range(batch_size):
-            keypoints_i = keypoints[batch_idx == i]
-            batched_keypoints[i, : keypoints_i.shape[0]] = keypoints_i
+        # Vectorized keypoint batching using advanced indexing
+        # Create indices for each batch element
+        batch_counts = torch.bincount(batch_idx, minlength=batch_size)
+        kpt_indices = torch.arange(len(batch_idx), device=batch_idx.device)
+        within_batch_indices = kpt_indices - torch.cat([torch.zeros(1, device=batch_idx.device, dtype=torch.long),
+                                                          batch_counts.cumsum(0)[:-1]])[batch_idx]
+        batched_keypoints[batch_idx, within_batch_indices] = keypoints
 
         # Expand dimensions of target_gt_idx to match the shape of batched_keypoints
-        target_gt_idx_expanded = target_gt_idx.unsqueeze(-1).unsqueeze(-1)
+        # Use view instead of double unsqueeze + expand for better performance
+        target_gt_idx_expanded = target_gt_idx.view(-1, target_gt_idx.shape[1], 1, 1).expand(
+            -1, -1, keypoints.shape[1], keypoints.shape[2]
+        )
 
         # Use target_gt_idx_expanded to select keypoints from batched_keypoints
-        selected_keypoints = batched_keypoints.gather(
-            1, target_gt_idx_expanded.expand(-1, -1, keypoints.shape[1], keypoints.shape[2])
-        )
+        selected_keypoints = batched_keypoints.gather(1, target_gt_idx_expanded)
 
         # Divide coordinates by stride
         selected_keypoints /= stride_tensor.view(1, -1, 1, 1)

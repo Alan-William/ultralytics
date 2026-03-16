@@ -79,17 +79,24 @@ def iou_distance(atracks: list, btracks: list) -> np.ndarray:
 
     ious = np.zeros((len(atlbrs), len(btlbrs)), dtype=np.float32)
     if len(atlbrs) and len(btlbrs):
+        # Optimize: convert to numpy array once instead of creating contiguous copies
+        atlbrs_arr = np.array(atlbrs, dtype=np.float32)
+        btlbrs_arr = np.array(btlbrs, dtype=np.float32)
+
         if len(atlbrs[0]) == 5 and len(btlbrs[0]) == 5:
-            ious = batch_probiou(
-                np.ascontiguousarray(atlbrs, dtype=np.float32),
-                np.ascontiguousarray(btlbrs, dtype=np.float32),
-            ).numpy()
+            # Use arrays directly if already contiguous, otherwise make contiguous
+            if not atlbrs_arr.flags['C_CONTIGUOUS']:
+                atlbrs_arr = np.ascontiguousarray(atlbrs_arr)
+            if not btlbrs_arr.flags['C_CONTIGUOUS']:
+                btlbrs_arr = np.ascontiguousarray(btlbrs_arr)
+            ious = batch_probiou(atlbrs_arr, btlbrs_arr).numpy()
         else:
-            ious = bbox_ioa(
-                np.ascontiguousarray(atlbrs, dtype=np.float32),
-                np.ascontiguousarray(btlbrs, dtype=np.float32),
-                iou=True,
-            )
+            # bbox_ioa can handle non-contiguous arrays efficiently
+            if not atlbrs_arr.flags['C_CONTIGUOUS']:
+                atlbrs_arr = np.ascontiguousarray(atlbrs_arr)
+            if not btlbrs_arr.flags['C_CONTIGUOUS']:
+                btlbrs_arr = np.ascontiguousarray(btlbrs_arr)
+            ious = bbox_ioa(atlbrs_arr, btlbrs_arr, iou=True)
     return 1 - ious  # cost matrix
 
 
@@ -109,10 +116,9 @@ def embedding_distance(tracks: list, detections: list, metric: str = "cosine") -
     cost_matrix = np.zeros((len(tracks), len(detections)), dtype=np.float32)
     if cost_matrix.size == 0:
         return cost_matrix
-    det_features = np.asarray([track.curr_feat for track in detections], dtype=np.float32)
-    # for i, track in enumerate(tracks):
-    # cost_matrix[i, :] = np.maximum(0.0, cdist(track.smooth_feat.reshape(1,-1), det_features, metric))
-    track_features = np.asarray([track.smooth_feat for track in tracks], dtype=np.float32)
+    # Optimize: use np.stack instead of asarray with list comprehension for better performance
+    det_features = np.stack([track.curr_feat for track in detections], axis=0).astype(np.float32)
+    track_features = np.stack([track.smooth_feat for track in tracks], axis=0).astype(np.float32)
     cost_matrix = np.maximum(0.0, cdist(track_features, det_features, metric))  # Normalized features
     return cost_matrix
 
