@@ -3,7 +3,7 @@
 # 核心依赖
 ultralytics>=8.0.0
 opencv-python-headless>=4.5.0
-numpy>=1.20.0
+numpy>=2.4.4
 
 # GUI 支持（树莓派需要）
 PyQt5>=5.15.0
