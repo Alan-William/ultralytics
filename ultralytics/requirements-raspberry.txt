@@ -6,7 +6,7 @@ opencv-python-headless>=4.5.0
 numpy>=1.20.0
 
 # GUI 支持（树莓派需要）
-PyQt5>=5.15.0
+PyQt5>=5.15.11
 
 # 图像处理
 Pillow>=9.0.0
