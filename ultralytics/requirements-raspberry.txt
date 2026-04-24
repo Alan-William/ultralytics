@@ -9,7 +9,7 @@ numpy>=1.20.0
 PyQt5>=5.15.0
 
 # 图像处理
-Pillow>=9.0.0
+Pillow>=12.2.0
 
 # 性能优化（可选）
 # onnxruntime>=1.14.0  # ONNX 推理加速
